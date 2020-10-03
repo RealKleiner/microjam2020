@@ -29,7 +29,7 @@ class Player:
 
     walk_acc = 1000.0
     max_walk_speed = 100
-    jump_acc = 10000.0
+    jump_acc = 7500.0
     slow_down = 0.01
     on_floor = False
 
@@ -47,11 +47,6 @@ def update_player(player, delta):
             player.velocity[0] - player.walk_acc * delta,
             player.velocity[1],
         )
-    elif player.on_floor and (key_down("w") or key_down(pg.K_UP)):
-        player.velocity = (
-            player.velocity[0],
-            player.velocity[1] - player.jump_acc * delta,
-        )
     else:
         # Yes, this is supposed to be an exponent.
         player.velocity = (
@@ -59,6 +54,11 @@ def update_player(player, delta):
             player.velocity[1],
         )
 
+    if player.on_floor and (key_down("w") or key_down(pg.K_UP)):
+        player.velocity = (
+            player.velocity[0],
+            player.velocity[1] - player.jump_acc * delta,
+        )
     # Gravity
     player.velocity = (player.velocity[0], player.velocity[1] + 100 * delta)
 
