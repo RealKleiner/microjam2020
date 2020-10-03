@@ -11,8 +11,8 @@ Pygame and the two magical files we've provided.
 First off, clone the repository and `cd` into it.
 
 ```bash
-# With HTTPS
-git clone https://github.com/lithekod/snake-ribs.git
+# With SSH
+git clone https://github.com/RealKleiner/microjam2020
 cd snake-ribs
 ```
 
