@@ -1,4 +1,13 @@
-from ribs import *
+from ribs import (
+    key_down,
+    pg,
+    delta,
+    solve_rect_overlap,
+    overlap_data,
+    draw_text,
+    restart,
+    start_game,
+)
 from dataclasses import dataclass
 
 # Asset dictionary for holding all your assets.
@@ -20,20 +29,35 @@ class Player:
 
     walk_acc = 1000.0
     max_walk_speed = 100
+    jump_acc = 10000.0
     slow_down = 0.01
+    on_floor = False
 
 
 def update_player(player, delta):
+    player.past_velocity = player.velocity
+
     if key_down("d") or key_down(pg.K_RIGHT):
-        player.velocity = (player.velocity[0] + player.walk_acc * delta,
-                           player.velocity[1])
+        player.velocity = (
+            player.velocity[0] + player.walk_acc * delta,
+            player.velocity[1],
+        )
     elif key_down("a") or key_down(pg.K_LEFT):
-        player.velocity = (player.velocity[0] - player.walk_acc * delta,
-                           player.velocity[1])
+        player.velocity = (
+            player.velocity[0] - player.walk_acc * delta,
+            player.velocity[1],
+        )
+    elif player.on_floor and (key_down("w") or key_down(pg.K_UP)):
+        player.velocity = (
+            player.velocity[0],
+            player.velocity[1] - player.jump_acc * delta,
+        )
     else:
         # Yes, this is supposed to be an exponent.
-        player.velocity = (player.velocity[0] * (player.slow_down ** delta),
-                           player.velocity[1])
+        player.velocity = (
+            player.velocity[0] * (player.slow_down ** delta),
+            player.velocity[1],
+        )
 
     # Gravity
     player.velocity = (player.velocity[0], player.velocity[1] + 100 * delta)
@@ -48,13 +72,20 @@ def update_player(player, delta):
 
 def draw_player(player):
     window = pg.display.get_surface()
-    pg.draw.rect(window, pg.Color(100, 30, 30), (player.centerx - player.width / 2,
-                                                 player.centery - player.height / 2,
-                                                 player.width,
-                                                 player.height))
+    pg.draw.rect(
+        window,
+        pg.Color(100, 30, 30),
+        (
+            player.centerx - player.width / 2,
+            player.centery - player.height / 2,
+            player.width,
+            player.height,
+        ),
+    )
+
 
 levels = [
-"""
+    """
 ##########
 #        #
 #        #
@@ -62,7 +93,7 @@ levels = [
 # S    E #
 ##########
 """,
-"""
+    """
 ##########
 #        #
 # S      #
@@ -70,11 +101,19 @@ levels = [
 ####   E #
 ##########
 """,
-"""
+    """
 ##########
 #      S #
 ####     #
 ##       #
+##E      #
+##########
+""",
+    """
+##########
+# S    ###
+####     #
+######## #
 ##E      #
 ##########
 """,
@@ -108,8 +147,8 @@ def parse_level(level_string):
 
 
 def init():
-    """ A function for loading all your assets.
-        (Audio assets can at their earliest be loaded here.)
+    """A function for loading all your assets.
+    (Audio assets can at their earliest be loaded here.)
     """
     # Load images here
     assets["teapot"] = pg.image.load("teapot.png")
@@ -119,13 +158,17 @@ def init():
 
 
 current_level = 0
+current_walls = 0
+
+
 def update():
     """The program starts here"""
     global current_level
+    global current_walls
     # Initialization (only runs on start/restart)
     player = Player()
 
-    walls, goals, start = parse_level(levels[current_level])
+    current_walls, goals, start = parse_level(levels[current_level])
     player.centerx = start[0]
     player.centery = start[1]
 
@@ -133,16 +176,18 @@ def update():
     while True:
         update_player(player, delta())
         draw_player(player)
+        player.on_floor = False
 
-        for wall in walls:
+        for wall in current_walls:
             window = pg.display.get_surface()
             pg.draw.rect(window, pg.Color(100, 100, 100), wall)
 
-            player_vel, wall_vel, overlap = solve_rect_overlap(player,
-                                                               wall,
-                                                               player.velocity,
-                                                               mass_b=0,
-                                                               bounce=0.1)
+            player_vel, wall_vel, overlap = solve_rect_overlap(
+                player, wall, player.velocity, mass_b=0, bounce=0.1
+            )
+            if overlap:
+                player.on_floor = True
+
             player.velocity = player_vel
 
         for goal in goals:
@@ -162,4 +207,4 @@ def update():
 
 # This has to be at the bottom, because of python reasons.
 if __name__ == "__main__":
-   start_game(init, update)
+    start_game(init, update)
